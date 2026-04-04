@@ -3,7 +3,7 @@ name: Auto Deploy Chatbot to Production
 on:
   push:
     branches:
-      - Main
+      - main
 
 jobs:
   deploy:
@@ -20,7 +20,7 @@ jobs:
             cd /opt/bookstack-mcp
             
             echo "Pulling latest changes from Git..."
-            git pull origin Main
+            git pull origin main
             
             echo "Rebuilding and restarting Docker containers..."
             docker compose down

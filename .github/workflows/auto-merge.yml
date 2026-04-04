@@ -21,17 +21,7 @@ jobs:
           test -f docker-compose.yml || { echo "docker-compose.yml is missing!"; exit 1; }
           echo "Docker configuration found!"
           
-      - name: Merge Develop into Main
+      - name: Merge Develop into main
         run: |
-          git config --global user.name "GitHub Auto-Merge Action"
-          git config --global user.email "actions@github.com"
-          
-          # Checkout Main and align it with the remote
-          git checkout Main
-          git pull origin Main || echo "Main not present on remote"
-          
-          # Merge Develop securely into Main
-          git merge origin/Develop --allow-unrelated-histories
-          
-          # Push the changes
-          git push origin Main
+          echo "Pushing Develop branch directly to main..."
+          git push origin HEAD:main
