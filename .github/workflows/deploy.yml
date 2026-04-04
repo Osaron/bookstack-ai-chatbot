@@ -17,7 +17,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             echo "Moving to Application Directory..."
-            cd /opt/bookstack-mcp/chatbot
+            cd /opt/bookstack-mcp
             
             echo "Pulling latest changes from Git..."
             git pull origin Main

@@ -14,13 +14,12 @@ jobs:
         with:
           fetch-depth: 0
           
-      - name: Verify OpenAI API Health
-        env:
-          OPENAI_KEY: ${{ secrets.OPENAI_API_KEY }}
+      - name: Verify Docker Assets
         run: |
-          echo "Pinging OpenAI Systems..."
-          curl -s -f -H "Authorization: Bearer $OPENAI_KEY" "https://api.openai.com/v1/models" > /dev/null
-          echo "OpenAI API is Online!"
+          echo "Ensuring deployment files are intact..."
+          test -f Dockerfile || { echo "Dockerfile is missing!"; exit 1; }
+          test -f docker-compose.yml || { echo "docker-compose.yml is missing!"; exit 1; }
+          echo "Docker configuration found!"
           
       - name: Merge Develop into Main
         run: |
