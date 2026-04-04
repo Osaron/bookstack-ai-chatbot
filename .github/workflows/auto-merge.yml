@@ -1,0 +1,47 @@
+name: Sanity Checks & Auto Merge to Main
+
+on:
+  push:
+    branches:
+      - Develop
+
+jobs:
+  verify-and-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Verify BookStack API Health
+        env:
+          BOOKSTACK_URL: ${{ secrets.BOOKSTACK_BASE_URL }}
+          BOOKSTACK_TOKEN: ${{ secrets.BOOKSTACK_TOKEN_ID }}:${{ secrets.BOOKSTACK_TOKEN_SECRET }}
+        run: |
+          echo "Pinging BookStack Server..."
+          curl -s -f -H "Authorization: Token $BOOKSTACK_TOKEN" "$BOOKSTACK_URL/api/docs" > /dev/null
+          echo "BookStack API is Online!"
+
+      - name: Verify OpenAI API Health
+        env:
+          OPENAI_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          echo "Pinging OpenAI Systems..."
+          curl -s -f -H "Authorization: Bearer $OPENAI_KEY" "https://api.openai.com/v1/models" > /dev/null
+          echo "OpenAI API is Online!"
+          
+      - name: Merge Develop into Main
+        run: |
+          git config --global user.name "GitHub Auto-Merge Action"
+          git config --global user.email "actions@github.com"
+          
+          # Checkout Main and align it with the remote
+          git checkout Main
+          git pull origin Main || echo "Main not present on remote"
+          
+          # Merge Develop securely into Main
+          git merge origin/Develop --allow-unrelated-histories
+          
+          # Push the changes
+          git push origin Main

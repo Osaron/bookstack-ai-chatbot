@@ -1,0 +1,29 @@
+name: Auto Deploy Chatbot to Production
+
+on:
+  push:
+    branches:
+      - Main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Execute Remote SSH Commands
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "Moving to Application Directory..."
+            cd /opt/bookstack-mcp/chatbot
+            
+            echo "Pulling latest changes from Git..."
+            git pull origin Main
+            
+            echo "Rebuilding and restarting Docker containers..."
+            docker compose down
+            docker compose up --build chatbot -d
+            
+            echo "Deployment Complete!"
