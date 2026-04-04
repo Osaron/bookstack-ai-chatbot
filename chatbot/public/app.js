@@ -1,326 +1,298 @@
-// === State ===
-const state = {
-  history: [],
-  isStreaming: false
-};
-
-// === DOM Elements ===
-const messagesContainer = document.getElementById('messages-container');
+const form = document.getElementById('chat-form');
+const input = document.getElementById('message-input');
+const sendBtn = document.getElementById('send-btn');
+const messagesWrapper = document.getElementById('messages-wrapper');
 const welcomeScreen = document.getElementById('welcome-screen');
-const messageInput = document.getElementById('message-input');
-const sendButton = document.getElementById('send-button');
-const clearChat = document.getElementById('clear-chat');
-const booksList = document.getElementById('books-list');
-const menuToggle = document.getElementById('menu-toggle');
-const sidebar = document.getElementById('sidebar');
+const sourcesPanel = document.getElementById('sources-panel');
+const sourcesList = document.getElementById('sources-list');
+const closeSourcesBtn = document.getElementById('close-sources');
 
-// === Init ===
-document.addEventListener('DOMContentLoaded', () => {
-  loadBooks();
-  setupEventListeners();
+// Sidebar Elements
+const sidebar = document.getElementById('sidebar');
+const menuBtn = document.getElementById('menu-btn');
+const shelvesBtn = document.getElementById('shelves-btn');
+const shelvesList = document.getElementById('shelves-list');
+const exploreBtn = document.getElementById('explore-btn');
+const cubeBtn = document.getElementById('cube-btn');
+const cubeList = document.getElementById('cube-list');
+const settingsBtn = document.getElementById('settings-btn');
+
+// Settings Items
+const themeCheckbox = document.getElementById('theme-checkbox');
+const langCheckbox = document.getElementById('lang-checkbox');
+const homeLinkBtn = document.getElementById('home-link-btn');
+
+let chatHistory = [];
+let currentSources = [];
+let shelvesLoaded = false;
+let cubeSectionsLoaded = false;
+let bookstackBaseUrl = '';
+let isPinned = false;
+
+// Initialize marked options
+marked.setOptions({ breaks: true, gfm: true });
+
+// Load Config
+async function loadConfig() {
+    try {
+        const res = await fetch('/api/config');
+        const data = await res.json();
+        bookstackBaseUrl = data.bookstackUrl;
+    } catch(e) { console.error('Failed to load config'); }
+}
+loadConfig();
+
+// Settings Actions
+themeCheckbox.addEventListener('change', (e) => {
+    if (!e.target.checked) {
+        document.body.classList.add('light-theme');
+    } else {
+        document.body.classList.remove('light-theme');
+    }
 });
 
-function setupEventListeners() {
-  // Send message
-  sendButton.addEventListener('click', sendMessage);
-  messageInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
+langCheckbox.addEventListener('change', (e) => {
+    const isES = e.target.checked;
+    const msg = isES ? '<em>Sistema Interno: Idioma cambiado a Español.</em>' : '<em>Internal System: Language switched to English.</em>';
+    e.target.parentElement.previousElementSibling.innerHTML = isES ? '<i class="fa-solid fa-language"></i> Español' : '<i class="fa-solid fa-language"></i> English';
+    appendMessage('bot', msg, true);
+});
+
+homeLinkBtn.addEventListener('click', () => {
+    if (bookstackBaseUrl) {
+        window.open(bookstackBaseUrl, '_blank');
     }
-  });
+});
 
-  // Enable/disable send button
-  messageInput.addEventListener('input', () => {
-    sendButton.disabled = !messageInput.value.trim() || state.isStreaming;
-    autoResize();
-  });
+// Sidebar Expansion Logic (Hover over anywhere entirely opens it, clicking pins it)
+sidebar.addEventListener('mouseenter', () => {
+    if (isPinned) return; // Prevent unnecessary class changes if pinned
+    sidebar.classList.add('expanded');
+    fetchShelves();
+    fetchCubeSections();
+});
 
-  // Clear chat
-  clearChat.addEventListener('click', () => {
-    state.history = [];
-    messagesContainer.innerHTML = '';
-    messagesContainer.appendChild(createWelcomeScreen());
-    messageInput.focus();
-  });
-
-  // Sidebar toggle (mobile)
-  menuToggle.addEventListener('click', () => {
-    sidebar.classList.toggle('open');
-  });
-
-  // Close sidebar on outside click (mobile)
-  document.addEventListener('click', (e) => {
-    if (sidebar.classList.contains('open') &&
-        !sidebar.contains(e.target) &&
-        !menuToggle.contains(e.target)) {
-      sidebar.classList.remove('open');
+menuBtn.addEventListener('click', () => {
+    isPinned = !isPinned;
+    if (isPinned) {
+        sidebar.classList.add('expanded');
+    } else {
+        sidebar.classList.remove('expanded');
     }
-  });
+});
 
-  // Suggestion chips
-  document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('suggestion-chip')) {
-      messageInput.value = e.target.dataset.query;
-      sendMessage();
+sidebar.addEventListener('mouseleave', () => {
+    if (!isPinned) {
+        sidebar.classList.remove('expanded');
     }
-  });
-}
+});
 
-function autoResize() {
-  messageInput.style.height = 'auto';
-  messageInput.style.height = Math.min(messageInput.scrollHeight, 150) + 'px';
-}
-
-// === Load Books ===
-async function loadBooks() {
-  try {
-    const res = await fetch('/api/books');
-    const books = await res.json();
-
-    if (books.length === 0) {
-      booksList.innerHTML = '<div class="loading-books">No books found</div>';
-      return;
+// Keep existing message logic
+function appendMessage(role, content, html = false) {
+    if (welcomeScreen.style.display !== 'none') {
+        welcomeScreen.style.display = 'none';
     }
-
-    booksList.innerHTML = books.map(book =>
-      `<div class="book-item" title="${escapeHtml(book.description || '')}">${escapeHtml(book.name)}</div>`
-    ).join('');
-  } catch (err) {
-    booksList.innerHTML = '<div class="loading-books">Failed to load books</div>';
-    updateConnectionStatus(false);
-  }
+    const div = document.createElement('div');
+    div.className = `message ${role}`;
+    if (html) { div.innerHTML = content; } else { div.textContent = content; }
+    messagesWrapper.appendChild(div);
+    scrollToBottom();
+    return div;
 }
 
-// === Send Message ===
-async function sendMessage() {
-  const text = messageInput.value.trim();
-  if (!text || state.isStreaming) return;
-
-  // Hide welcome screen
-  if (welcomeScreen) welcomeScreen.remove();
-
-  // Add user message
-  addMessage('user', text);
-  state.history.push({ role: 'user', content: text });
-
-  // Clear input
-  messageInput.value = '';
-  messageInput.style.height = 'auto';
-  sendButton.disabled = true;
-  state.isStreaming = true;
-
-  // Show status
-  const statusEl = addStatus('Connecting...');
-
-  try {
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: text,
-        history: state.history.slice(-6)
-      })
-    });
-
-    if (!response.ok) throw new Error(`Server error: ${response.status}`);
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let assistantContent = '';
-    let contentEl = null;
-    let buffer = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
-
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-
-        let data;
-        try { data = JSON.parse(line.slice(6)); }
-        catch { continue; }
-
-        switch (data.type) {
-          case 'status':
-            updateStatus(statusEl, data.content);
-            break;
-
-          case 'sources':
-            removeStatus(statusEl);
-            addSources(data.content);
-            break;
-
-          case 'content':
-            if (!contentEl) {
-              removeStatus(statusEl);
-              contentEl = addMessage('assistant', '');
-            }
-            assistantContent += data.content;
-            renderMarkdown(contentEl, assistantContent);
-            scrollToBottom();
-            break;
-
-          case 'error':
-            removeStatus(statusEl);
-            addError(data.content);
-            break;
-
-          case 'done':
-            if (assistantContent) {
-              state.history.push({ role: 'assistant', content: assistantContent });
-            }
-            break;
-        }
-      }
+function updateStatus(text) {
+    let indicator = document.getElementById('current-status');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'current-status';
+        indicator.className = 'status-indicator';
+        messagesWrapper.appendChild(indicator);
     }
-  } catch (err) {
-    removeStatus(statusEl);
-    addError(err.message);
-  } finally {
-    state.isStreaming = false;
-    sendButton.disabled = !messageInput.value.trim();
-    messageInput.focus();
-  }
+    indicator.innerHTML = `<div class="spinner"></div> ${text}`;
+    scrollToBottom();
 }
 
-// === UI Helpers ===
-function addMessage(role, content) {
-  const wrapper = document.createElement('div');
-  wrapper.className = `message ${role}`;
-
-  const avatar = document.createElement('div');
-  avatar.className = 'message-avatar';
-  avatar.textContent = role === 'user' ? '👤' : '🤖';
-
-  const bubble = document.createElement('div');
-  bubble.className = 'message-content';
-
-  if (role === 'user') {
-    bubble.textContent = content;
-  } else {
-    renderMarkdown(bubble, content);
-  }
-
-  wrapper.appendChild(avatar);
-  wrapper.appendChild(bubble);
-  messagesContainer.appendChild(wrapper);
-  scrollToBottom();
-
-  return bubble;
-}
-
-function addSources(sources) {
-  const container = document.createElement('div');
-  container.className = 'sources-container';
-
-  const label = document.createElement('div');
-  label.className = 'sources-label';
-  label.textContent = `${sources.length} Sources Found`;
-
-  const grid = document.createElement('div');
-  grid.className = 'sources-grid';
-
-  sources.forEach(source => {
-    const card = document.createElement('a');
-    card.className = 'source-card';
-    card.href = source.url;
-    card.target = '_blank';
-    card.rel = 'noopener noreferrer';
-    card.innerHTML = `<span>${escapeHtml(source.name)}</span>`;
-    grid.appendChild(card);
-  });
-
-  container.appendChild(label);
-  container.appendChild(grid);
-  messagesContainer.appendChild(container);
-  scrollToBottom();
-}
-
-function addStatus(text) {
-  const el = document.createElement('div');
-  el.className = 'status-message';
-  el.innerHTML = `
-    <div class="typing-dots"><span></span><span></span><span></span></div>
-    <span>${escapeHtml(text)}</span>
-  `;
-  messagesContainer.appendChild(el);
-  scrollToBottom();
-  return el;
-}
-
-function updateStatus(el, text) {
-  if (el) {
-    const span = el.querySelector('span:last-child');
-    if (span) span.textContent = text;
-  }
-}
-
-function removeStatus(el) {
-  if (el && el.parentNode) el.parentNode.removeChild(el);
-}
-
-function addError(msg) {
-  const el = document.createElement('div');
-  el.className = 'error-message';
-  el.textContent = `❌ Error: ${msg}`;
-  messagesContainer.appendChild(el);
-  scrollToBottom();
-}
-
-function renderMarkdown(el, content) {
-  if (typeof marked !== 'undefined') {
-    el.innerHTML = marked.parse(content || '', { breaks: true });
-  } else {
-    el.textContent = content;
-  }
+function removeStatus() {
+    const indicator = document.getElementById('current-status');
+    if (indicator) indicator.remove();
 }
 
 function scrollToBottom() {
-  requestAnimationFrame(() => {
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-  });
+    messagesWrapper.scrollTop = messagesWrapper.scrollHeight;
 }
 
-function updateConnectionStatus(connected) {
-  const statusEl = document.getElementById('connection-status');
-  if (statusEl) {
-    const dot = statusEl.querySelector('.status-dot');
-    const text = statusEl.querySelector('span:last-child');
-    if (dot) dot.style.background = connected ? 'var(--success)' : 'var(--error)';
-    if (text) text.textContent = connected ? 'Connected to BookStack' : 'Connection error';
-  }
+closeSourcesBtn.addEventListener('click', () => { sourcesPanel.classList.remove('open'); });
+
+function openSourcesPanel(sources) {
+    sourcesList.innerHTML = '';
+    sources.forEach(source => {
+        const card = document.createElement('div');
+        card.className = 'source-card';
+        card.innerHTML = `
+            <a href="${source.url}" target="_blank" rel="noopener noreferrer">
+                <i class="fa-solid fa-link"></i> ${source.name}
+            </a>
+            <p>${source.preview}</p>
+        `;
+        sourcesList.appendChild(card);
+    });
+    sourcesPanel.classList.add('open');
 }
 
-function createWelcomeScreen() {
-  const el = document.createElement('div');
-  el.className = 'welcome-screen';
-  el.id = 'welcome-screen';
-  el.innerHTML = `
-    <div class="welcome-icon">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
-        <circle cx="12" cy="10" r="2"/><path d="M12 12v3"/>
-      </svg>
-    </div>
-    <h2>Welcome to BookStack AI</h2>
-    <p>I can search your documentation and answer questions. Try asking:</p>
-    <div class="suggestion-chips">
-      <button class="suggestion-chip" data-query="What documentation do we have?">📚 What docs do we have?</button>
-      <button class="suggestion-chip" data-query="Show me the most important pages">⭐ Most important pages</button>
-      <button class="suggestion-chip" data-query="How do I get started?">🚀 How do I get started?</button>
-    </div>
-  `;
-  return el;
+// Sidebar APIs
+async function fetchShelves() {
+    if (shelvesLoaded) return;
+    try {
+        const res = await fetch('/api/shelves');
+        const shelves = await res.json();
+        shelvesList.innerHTML = '';
+        if (shelves.length === 0) {
+            shelvesList.innerHTML = '<div class="loading-mini">No shelves found.</div>';
+        } else {
+            shelves.forEach(s => {
+                const item = document.createElement('div');
+                item.className = 'shelf-item';
+                item.textContent = s.name;
+                item.addEventListener('click', () => {
+                    handleChatRequest(`Search the BookStack shelf "${s.name}" and give me a summary of what's inside, including links to it if possible.`, false);
+                });
+                shelvesList.appendChild(item);
+            });
+        }
+        shelvesLoaded = true;
+    } catch (e) {
+        shelvesList.innerHTML = '<div class="loading-mini">Failed to load shelves</div>';
+    }
 }
 
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
+async function fetchCubeSections() {
+    if (cubeSectionsLoaded) return;
+    try {
+        const res = await fetch('/api/cube-sections');
+        const data = await res.json();
+        cubeList.innerHTML = '';
+        if (!data.sections || data.sections.length === 0) {
+            cubeList.innerHTML = '<div class="loading-mini">No sections found.</div>';
+        } else {
+            data.sections.forEach(s => {
+                const item = document.createElement('div');
+                item.className = 'cube-item';
+                item.textContent = s;
+                item.addEventListener('click', () => {
+                    handleChatRequest(`Retrieve the Cube section "${s}" and summarize its contents for me with links.`, false);
+                });
+                cubeList.appendChild(item);
+            });
+        }
+        cubeSectionsLoaded = true;
+    } catch (e) {
+        cubeList.innerHTML = '<div class="loading-mini">Failed to load sections</div>';
+    }
+}
+
+// Hover Event Listeners for side pane (still active when collapsed)
+shelvesBtn.parentElement.addEventListener('mouseenter', fetchShelves);
+cubeBtn.parentElement.addEventListener('mouseenter', fetchCubeSections);
+
+// Pre-defined Actions
+exploreBtn.addEventListener('click', () => {
+    handleChatRequest("Please explore BookStack and provide a general summary of the documentation available for Zters systems.", true);
+});
+
+cubeBtn.addEventListener('click', () => {
+    handleChatRequest("Please fetch the QuickStart guide and list all the sections for the Cube platform.", true);
+});
+
+// Prompt suggestion chips
+document.querySelectorAll('.suggestion-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const query = e.target.getAttribute('data-query');
+        handleChatRequest(query, false);
+    });
+});
+
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const message = input.value.trim();
+    if (!message) return;
+    handleChatRequest(message, false);
+});
+
+async function handleChatRequest(message, isSystemCommand = false) {
+    appendMessage('user', message);
+    input.value = '';
+    sendBtn.disabled = true;
+    
+    chatHistory.push({ role: 'user', content: message });
+    
+    const botMsgDiv = appendMessage('bot', '', true);
+    let fullResponse = '';
+    currentSources = [];
+
+    try {
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, history: chatHistory.slice(-10), isSystemCommand })
+        });
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n\n');
+            
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const dataStr = line.substring(6);
+                    if (!dataStr) continue;
+                    
+                    try {
+                        const data = JSON.parse(dataStr);
+                        
+                        if (data.type === 'status') {
+                            updateStatus(data.content);
+                        } 
+                        else if (data.type === 'sources') {
+                            currentSources = data.content;
+                        }
+                        else if (data.type === 'content') {
+                            removeStatus();
+                            fullResponse += data.content;
+                            botMsgDiv.innerHTML = marked.parse(fullResponse);
+                            scrollToBottom();
+                        }
+                        else if (data.type === 'error') {
+                            removeStatus();
+                            fullResponse += `\n\n*Error: ${data.content}*`;
+                            botMsgDiv.innerHTML = marked.parse(fullResponse);
+                        }
+                        else if (data.type === 'done') {
+                            removeStatus();
+                            if (currentSources.length > 0) {
+                                const btn = document.createElement('button');
+                                btn.className = 'view-sources-btn';
+                                btn.innerHTML = '<i class="fa-solid fa-layer-group"></i> View Sources (' + currentSources.length + ')';
+                                btn.onclick = () => openSourcesPanel(currentSources);
+                                botMsgDiv.appendChild(btn);
+                            }
+                            chatHistory.push({ role: 'assistant', content: fullResponse });
+                        }
+                    } catch (err) {
+                        console.error('Error parsing SSE:', err, dataStr);
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        removeStatus();
+        botMsgDiv.innerHTML = `<span style="color:red">Connection error: ${error.message}</span>`;
+    } finally {
+        sendBtn.disabled = false;
+        input.focus();
+    }
 }

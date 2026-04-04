@@ -1,96 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="AI-powered chatbot for BookStack documentation">
-  <title>BookStack AI Assistant</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zters UI Assistant</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- FontAwesome for standard icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts for sleek aesthetics -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="app-container" id="app-container">
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <div class="logo">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
-            <path d="M8 7h6"/><path d="M8 11h8"/>
-          </svg>
-          <h1>BookStack AI</h1>
-        </div>
-      </div>
-      <div class="sidebar-section">
-        <h3>Available Books</h3>
-        <div class="books-list" id="books-list">
-          <div class="loading-books">Loading books...</div>
-        </div>
-      </div>
-      <div class="sidebar-footer">
-        <div class="connection-status" id="connection-status">
-          <span class="status-dot"></span>
-          <span>Connected to BookStack</span>
-        </div>
-      </div>
-    </aside>
+    <div class="app-container">
+        <!-- Lean Left Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-top">
+                <button class="icon-button logo-btn" aria-label="Menu" id="menu-btn">
+                    <img src="https://www.zters.com/blog/wp-content/uploads/2025/07/logo-v1.png" alt="Zters" class="brand-logo" id="brand-logo" />
+                </button>
+                <div class="divider"></div>
+                
+                <!-- Options per User Request -->
+                <div class="sidebar-action-group">
+                    <!-- Shelves Option -->
+                    <div class="action-item">
+                        <button class="icon-button outline" id="shelves-btn" aria-label="BookStack Shelves">
+                            <i class="fa-solid fa-book-open"></i> <span class="sidebar-label">BookStack Shelves</span>
+                        </button>
+                        <div class="popover-panel" id="shelves-popover">
+                            <h4>BookStack Shelves</h4>
+                            <div id="shelves-list" class="list-container">
+                                <!-- Populated dynamically -->
+                                <div class="loading-mini">Loading shelves...</div>
+                            </div>
+                        </div>
+                    </div>
+                
+                    <!-- Explore Assistant Option -->
+                    <div class="action-item">
+                        <button class="icon-button outline" id="explore-btn" aria-label="Explore BookStack with the Assistant">
+                            <i class="fa-solid fa-rocket"></i> <span class="sidebar-label">Explore BookStack</span>
+                        </button>
+                        <div class="tooltip tooltip-explore">Explore BookStack with the Assistant</div>
+                    </div>
 
-    <!-- Main Chat Area -->
-    <main class="chat-main">
-      <header class="chat-header">
-        <button class="menu-toggle" id="menu-toggle" aria-label="Toggle sidebar">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-          </svg>
-        </button>
-        <div class="header-info">
-          <h2>Documentation Assistant</h2>
-          <span class="header-subtitle">Ask anything about your BookStack docs</span>
-        </div>
-        <button class="clear-chat" id="clear-chat" title="New conversation">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 5v14M5 12h14"/>
-          </svg>
-          <span>New Chat</span>
-        </button>
-      </header>
+                    <!-- Cube QuickStart Option -->
+                    <div class="action-item">
+                        <button class="icon-button outline" id="cube-btn" aria-label="View Cube QuickStart">
+                            <i class="fa-solid fa-cube"></i> <span class="sidebar-label">Cube QuickStart</span>
+                        </button>
+                        <div class="popover-panel" id="cube-popover">
+                            <h4>Cube QuickStart Sections</h4>
+                            <div id="cube-list" class="list-container">
+                                <div class="loading-mini">Loading sections...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar-bottom">
+                <div class="action-item">
+                    <button class="icon-button outline" id="settings-btn" aria-label="Settings">
+                        <i class="fa-solid fa-gear"></i> <span class="sidebar-label">Settings</span>
+                    </button>
+                    <div class="popover-panel" id="settings-popover" style="bottom: 0; top: auto; width: 280px;">
+                        <h4>Settings</h4>
+                        <div class="list-container">
+                            <div class="setting-row">
+                                <span class="setting-label"><i class="fa-solid fa-moon"></i> Dark Mode</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="theme-checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-row">
+                                <span class="setting-label"><i class="fa-solid fa-language"></i> English</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="lang-checkbox">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="shelf-item" id="home-link-btn" style="margin-top: 5px;"><i class="fa-solid fa-house"></i> BookStack Homepage</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
 
-      <!-- Messages -->
-      <div class="messages-container" id="messages-container">
-        <div class="welcome-screen" id="welcome-screen">
-          <div class="welcome-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
-              <circle cx="12" cy="10" r="2"/><path d="M12 12v3"/>
-            </svg>
-          </div>
-          <h2>Welcome to BookStack AI</h2>
-          <p>I can search your documentation and answer questions. Try asking:</p>
-          <div class="suggestion-chips">
-            <button class="suggestion-chip" data-query="What documentation do we have?">📚 What docs do we have?</button>
-            <button class="suggestion-chip" data-query="Show me the most important pages">⭐ Most important pages</button>
-            <button class="suggestion-chip" data-query="How do I get started?">🚀 How do I get started?</button>
-          </div>
-        </div>
-      </div>
+        <!-- Main Chat Interface -->
+        <main class="chat-main">
+            <!-- Header for small screens -->
+            <header class="mobile-header">
+                <h2>Zters Assistant</h2>
+            </header>
 
-      <!-- Input Area -->
-      <div class="input-area">
-        <div class="input-wrapper">
-          <textarea id="message-input" placeholder="Ask a question about your documentation..." rows="1" autofocus></textarea>
-          <button class="send-button" id="send-button" disabled aria-label="Send message">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/>
-            </svg>
-          </button>
-        </div>
-        <span class="input-hint">Press Enter to send · Shift+Enter for new line</span>
-      </div>
-    </main>
-  </div>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="app.js"></script>
+            <div class="messages-wrapper" id="messages-wrapper">
+                <!-- Welcome UI exactly matching screenshot -->
+                <div class="welcome-screen" id="welcome-screen">
+                    <div class="huge-icon">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                    <h1>Welcome to Zters Assistant</h1>
+                    <p>Ask a question or tell me about your use case. I'll point you to the right documentation.</p>
+                    
+                    <div class="prompt-suggestions">
+                        <button class="suggestion-btn" data-query="Can you summarize the purpose of the Cube platform?">Highlight Zters features for my use case</button>
+                        <button class="suggestion-btn" data-query="How does the Portal integrate with typical customer workflows?">How does Portal integrate with my product?</button>
+                        <button class="suggestion-btn" data-query="What role does the Zters Hub play in daily operations?">Explain the role of Zters Hub</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Form - Floating rounded style -->
+            <div class="input-area">
+                <form id="chat-form">
+                    <div class="input-container">
+                        <input type="text" id="message-input" placeholder="Ask, search, or explain..." autocomplete="off">
+                        <button type="submit" id="send-btn">Send</button>
+                    </div>
+                    <div class="input-footer">
+                        <i class="fa-solid fa-robot"></i> Based on Zters context
+                    </div>
+                </form>
+            </div>
+            
+            <div class="brand-footer">
+                <i class="fa-solid fa-layer-group"></i> Powered by BookStack & Zters IT
+            </div>
+        </main>
+        
+        <!-- Right sources panel (Hidden until active) -->
+        <aside class="sources-panel" id="sources-panel">
+            <div class="sources-header">
+                <h3>Sources</h3>
+                <button id="close-sources"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="sources-list" id="sources-list"></div>
+        </aside>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
