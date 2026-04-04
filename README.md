@@ -1,132 +1,74 @@
-# BookStack MCP Server
+# BookStack AI Chatbot & MCP Server
 
-A [Model Context Protocol](https://modelcontextprotocol.io) (MCP) server that gives AI assistants full access to your [BookStack](https://www.bookstackapp.com) documentation — search, read, create, and manage content.
+A full-stack solution to give AI full access to your [BookStack](https://www.bookstackapp.com) documentation. This repository includes two main components:
+1. **BookStack AI Chatbot**: A web-based intelligent assistant (using GPT-4o) that searches your BookStack documentation and generates answers complete with citations and source links.
+2. **BookStack MCP Server**: A [Model Context Protocol](https://modelcontextprotocol.io) (MCP) server that exposes BookStack's API natively to MCP-compatible AI clients (like Claude Desktop).
 
-## Features
+---
 
-- 17 read-only tools + 8 write tools for complete BookStack API coverage
-- Type-safe input validation with Zod (auto-coerces string/number params for broad client compatibility)
-- Embedded URLs and content previews in all responses
-- Write operations disabled by default for safety
-- Works with Claude Desktop, LibreChat, and any MCP-compatible client
+## 🤖 1. BookStack AI Chatbot
 
-## Quick Start
+The easiest way to interact with your BookStack Knowledge Base. It uses a **Retrieval-Augmented Generation (RAG)** pipeline to fetch structural documentation (Books and Chapters) as well as the exact contexts from individual Pages, then streams answers to you using OpenAI's GPT-4o.
 
-### Install from npm
+### ✨ Features
+- **Smart Structural Search**: Fallback indexing capable of searching pages, complete books, and sectioned chapters.
+- **Auto-Keyword Fallback**: Intelligent extraction of key search terms if natural language queries do not yield enough primary results.
+- **Premium Interface**: A "glassmorphism" dark theme with sidebars for available books, answer streaming, and markdown formatting.
+- **Deep Links**: Direct URLs citing the exact BookStack page referenced in the LLM's answer.
 
-```bash
-npx bookstack-mcp
-```
+### 🚀 Local Deployment via Docker
 
-### Or clone and build
+Everything is fully containerized. You just need Docker installed on your machine.
 
-```bash
-git clone https://github.com/ttpears/bookstack-mcp.git
-cd bookstack-mcp
-npm install && npm run build
-npm start
-```
-
-### Environment Variables
+#### Step 1: Configure Environment Variables
+Inside the repository, there is a `chatbot/.env` file. You must provide your BookStack configuration and OpenAI API Key.
 
 ```env
-BOOKSTACK_BASE_URL=https://your-bookstack.com   # Required
-BOOKSTACK_TOKEN_ID=your-token-id                # Required
-BOOKSTACK_TOKEN_SECRET=your-token-secret        # Required
-BOOKSTACK_ENABLE_WRITE=false                    # Optional, default false
+# /chatbot/.env
+
+# BookStack Configuration
+BOOKSTACK_BASE_URL=https://library.zters.com/
+BOOKSTACK_TOKEN_ID=your_bookstack_token_id
+BOOKSTACK_TOKEN_SECRET=your_bookstack_token_secret
+
+# OpenAI Configuration
+OPENAI_API_KEY=sk-your_openai_api_key
+OPENAI_MODEL=gpt-4o
+
+# Server Port
+PORT=3000
 ```
+> **Note:** We recommend `gpt-4o` for fast processing and optimal performance with larger context sets.
 
-## Client Configuration
-
-### Claude Desktop
-
-Add to your Claude Desktop config:
-
-```json
-{
-  "mcpServers": {
-    "bookstack": {
-      "command": "npx",
-      "args": ["-y", "bookstack-mcp"],
-      "env": {
-        "BOOKSTACK_BASE_URL": "https://your-bookstack.com",
-        "BOOKSTACK_TOKEN_ID": "your-token-id",
-        "BOOKSTACK_TOKEN_SECRET": "your-token-secret"
-      }
-    }
-  }
-}
-```
-
-### LibreChat
-
-Add to your `librechat.yaml`:
-
-```yaml
-mcpServers:
-  bookstack:
-    command: npx
-    args:
-      - -y
-      - bookstack-mcp
-    env:
-      BOOKSTACK_BASE_URL: "https://your-bookstack.com"
-      BOOKSTACK_TOKEN_ID: "your-token-id"
-      BOOKSTACK_TOKEN_SECRET: "your-token-secret"
-```
-
-Restart LibreChat after config changes.
-
-## Available Tools
-
-### Read Operations (always available)
-
-| Tool | Description |
-|------|-------------|
-| `get_capabilities` | Server capabilities and configuration |
-| `search_content` | Search across all content with filtering |
-| `search_pages` | Search pages with optional book filtering |
-| `get_books` / `get_book` | List or get details of books |
-| `get_pages` / `get_page` | List or get full page content |
-| `get_chapters` / `get_chapter` | List or get chapter details |
-| `get_shelves` / `get_shelf` | List or get shelf details |
-| `get_attachments` / `get_attachment` | List or get attachment details |
-| `export_page` | Export page as HTML, PDF, Markdown, plaintext, or ZIP |
-| `export_book` | Export entire book |
-| `export_chapter` | Export chapter |
-| `get_recent_changes` | Recently updated content |
-
-### Write Operations (requires `BOOKSTACK_ENABLE_WRITE=true`)
-
-| Tool | Description |
-|------|-------------|
-| `create_page` / `update_page` | Create or update pages |
-| `create_shelf` / `update_shelf` / `delete_shelf` | Manage shelves |
-| `create_attachment` / `update_attachment` / `delete_attachment` | Manage attachments |
-
-## BookStack API Setup
-
-1. Log into BookStack as an admin
-2. Go to **Settings > Users > Edit your user**
-3. Ensure the user has **Access System API** permission
-4. In the **API Tokens** section, create a new token
-5. Copy the Token ID and Token Secret
-
-## Security
-
-- Write operations are **disabled by default**
-- Use HTTPS for production instances
-- Store API tokens securely (never commit to git)
-- Consider a dedicated BookStack user with limited permissions
-
-## Development
+#### Step 2: Build and Run 
+In the root of the project where `docker-compose.yml` is located, run the following command:
 
 ```bash
-npm run dev          # Hot reload with tsx
-npm run type-check   # Type checking only
-npm run build        # Production build
+docker compose up --build chatbot -d
 ```
+*The `-d` flag runs it in detached mode so you can continue using your terminal.*
 
-## License
+#### Step 3: Access the Chatbot
+Open your browser and navigate to:
+**[http://localhost:3000](http://localhost:3000)**
 
-MIT
+---
+
+## 🔌 2. BookStack MCP Server
+
+This is the underlying Model Context Protocol (MCP) server if you want to integrate BookStack directly into clients like Claude Desktop instead of using the custom web UI.
+
+### Features
+- **17 Read-only Tools & 8 Write Tools** covering complete BookStack API endpoints.
+- Embedded URLs and content previews in all responses.
+- Write operations disabled by default for maximum safety.
+
+*(For detailed MCP setup with Claude or LibreChat, reference standard MCP integration rules config files)*
+
+---
+
+### Prerequisites
+- Node.js (v18 or v20+) — If running manually.
+- Docker and Docker Compose — Recommended deployment method.
+- An Active OpenAI account with API credits (for the Chatbot).
+- API Access enabled on your BookStack instance, with generated Profile API Tokens. 
