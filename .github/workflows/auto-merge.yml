@@ -14,15 +14,6 @@ jobs:
         with:
           fetch-depth: 0
           
-      - name: Verify BookStack API Health
-        env:
-          BOOKSTACK_URL: ${{ secrets.BOOKSTACK_BASE_URL }}
-          BOOKSTACK_TOKEN: ${{ secrets.BOOKSTACK_TOKEN_ID }}:${{ secrets.BOOKSTACK_TOKEN_SECRET }}
-        run: |
-          echo "Pinging BookStack Server..."
-          curl -s -f -H "Authorization: Token $BOOKSTACK_TOKEN" "$BOOKSTACK_URL/api/docs" > /dev/null
-          echo "BookStack API is Online!"
-
       - name: Verify OpenAI API Health
         env:
           OPENAI_KEY: ${{ secrets.OPENAI_API_KEY }}
