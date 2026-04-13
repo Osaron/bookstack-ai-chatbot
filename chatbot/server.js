@@ -39,6 +39,12 @@ async function searchBookStack(query, count = 10) {
     return res.data.data || [];
   } catch (err) {
     console.error('BookStack search error:', err.message);
+    // Surface connection failures with a typed error so the caller can report them
+    if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT' || (err.response && err.response.status >= 500)) {
+      const e = new Error('Cannot reach the BookStack server');
+      e.type = 'bookstack_error';
+      throw e;
+    }
     return [];
   }
 }
@@ -318,7 +324,29 @@ ${contextBlock}`;
     res.end();
   } catch (err) {
     console.error('Chat error:', err);
-    res.write(`data: ${JSON.stringify({ type: 'error', content: err.message })}\n\n`);
+
+    // Classify the error for the frontend
+    let errorType = 'error';
+    let errorMsg  = err.message;
+
+    if (err.type === 'bookstack_error') {
+      errorType = 'bookstack_error';
+      errorMsg  = 'Cannot reach the BookStack server.';
+    } else if (
+      err?.status === 429 ||
+      err?.error?.type === 'insufficient_quota' ||
+      (err.message && (err.message.includes('quota') || err.message.includes('rate limit') || err.message.includes('insufficient_quota') || err.message.includes('429')))
+    ) {
+      errorType = 'quota_error';
+      errorMsg  = 'OpenAI token quota exceeded.';
+    } else if (
+      err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT'
+    ) {
+      errorType = 'bookstack_error';
+      errorMsg  = 'Cannot reach the BookStack server.';
+    }
+
+    res.write(`data: ${JSON.stringify({ type: errorType, content: errorMsg })}\n\n`);
     res.end();
   }
 });

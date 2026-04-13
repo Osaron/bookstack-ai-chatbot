@@ -115,6 +115,44 @@ function appendMessage(role, content, html = false) {
     return div;
 }
 
+// Styled error alert cards
+function appendErrorCard(type) {
+    if (welcomeScreen.style.display !== 'none') {
+        welcomeScreen.style.display = 'none';
+    }
+
+    let variant, icon, title, desc;
+
+    if (type === 'quota_error') {
+        variant = 'quota';
+        icon    = '⚠️';
+        title   = 'AI Token Quota Reached';
+        desc    = 'The OpenAI token quota for this account has been exhausted. Please contact your Zters IT administrator to top up the API credits.';
+    } else if (type === 'bookstack_error') {
+        variant = 'connection';
+        icon    = '🔌';
+        title   = 'Cannot Connect to BookStack';
+        desc    = 'The assistant is unable to reach the Zters knowledge base. Please check your <strong>Zters VPN connection</strong> and try again.';
+    } else {
+        variant = 'generic';
+        icon    = '❌';
+        title   = 'Something went wrong';
+        desc    = 'An unexpected error occurred. Please try again or contact Zters IT support if the problem persists.';
+    }
+
+    const card = document.createElement('div');
+    card.className = `error-card ${variant}`;
+    card.innerHTML = `
+        <span class="error-icon">${icon}</span>
+        <div class="error-body">
+            <span class="error-title">${title}</span>
+            <span class="error-desc">${desc}</span>
+        </div>
+    `;
+    messagesWrapper.appendChild(card);
+    scrollToBottom();
+}
+
 function updateStatus(text) {
     let indicator = document.getElementById('current-status');
     if (!indicator) {
@@ -281,10 +319,15 @@ async function handleChatRequest(message, isSystemCommand = false) {
                             botMsgDiv.innerHTML = marked.parse(fullResponse);
                             scrollToBottom();
                         }
+                        else if (data.type === 'quota_error' || data.type === 'bookstack_error') {
+                            removeStatus();
+                            botMsgDiv.remove(); // remove empty bot placeholder
+                            appendErrorCard(data.type);
+                        }
                         else if (data.type === 'error') {
                             removeStatus();
-                            fullResponse += `\n\n*Error: ${data.content}*`;
-                            botMsgDiv.innerHTML = marked.parse(fullResponse);
+                            botMsgDiv.remove();
+                            appendErrorCard('error');
                         }
                         else if (data.type === 'done') {
                             removeStatus();
@@ -305,7 +348,8 @@ async function handleChatRequest(message, isSystemCommand = false) {
         }
     } catch (error) {
         removeStatus();
-        botMsgDiv.innerHTML = `<span style="color:red">Connection error: ${error.message}</span>`;
+        botMsgDiv.remove();
+        appendErrorCard('bookstack_error');
     } finally {
         sendBtn.disabled = false;
         input.focus();
