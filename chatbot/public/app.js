@@ -42,13 +42,28 @@ async function loadConfig() {
 }
 loadConfig();
 
-// Settings Actions
-themeCheckbox.addEventListener('change', (e) => {
-    if (!e.target.checked) {
-        document.body.classList.add('light-theme');
-    } else {
+// ── Theme: respect OS/browser preference on first load ──────────────────
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+function applyTheme(dark) {
+    if (dark) {
         document.body.classList.remove('light-theme');
+        themeCheckbox.checked = true;
+    } else {
+        document.body.classList.add('light-theme');
+        themeCheckbox.checked = false;
     }
+}
+
+// Apply immediately on load
+applyTheme(prefersDark.matches);
+
+// Follow live system changes (e.g. macOS auto switch)
+prefersDark.addEventListener('change', (e) => applyTheme(e.matches));
+
+// Manual toggle still works and overrides for the session
+themeCheckbox.addEventListener('change', (e) => {
+    applyTheme(e.target.checked);
 });
 
 langCheckbox.addEventListener('change', (e) => {

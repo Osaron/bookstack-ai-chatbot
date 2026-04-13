@@ -19,13 +19,177 @@
 }
 
 body.light-theme {
+    /* Surface layers */
     --bg-dark: #f0f2f5;
     --bg-darker: #ffffff;
     --bg-panel: #ffffff;
-    --text-primary: #1e1e1e;
-    --text-secondary: #555555;
-    --border-color: #dddddd;
-    --bubble-user: #e2e8f0;
+
+    /* Typography */
+    --text-primary: #1a1a2e;
+    --text-secondary: #64748b;
+
+    /* Borders & dividers */
+    --border-color: #e2e8f0;
+
+    /* Message bubbles */
+    --bubble-user: #ede9fe;
+
+    /* Zters CUBE accent — violet/purple used for labels, dashed borders, section headers */
+    --zters-purple: #7c3aed;
+    --zters-purple-dim: rgba(124, 58, 237, 0.1);
+    --zters-purple-border: rgba(124, 58, 237, 0.35);
+
+    /* Keep orange brand colour (already in :root) */
+    --zters-orange-dim: rgba(244, 118, 33, 0.12);
+}
+
+/* ── Chat main area: replace dark gradient with clean light grey ── */
+body.light-theme .chat-main {
+    background: #f0f2f5 !important;
+}
+
+/* ── Welcome screen icon circle ── */
+body.light-theme .huge-icon {
+    background-color: #ffffff;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Welcome text ── */
+body.light-theme .welcome-screen h1 {
+    color: #1a1a2e;
+}
+body.light-theme .welcome-screen p {
+    color: #64748b;
+}
+
+/* ── Suggestion / prompt buttons: white cards with visible border ── */
+body.light-theme .suggestion-btn {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+body.light-theme .suggestion-btn:hover {
+    background: #f8f5ff;
+    border-color: var(--zters-purple-border);
+    color: var(--zters-purple);
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.12);
+}
+
+/* ── User message bubble ── */
+body.light-theme .message.user {
+    background-color: #ffffff;
+    color: #1a1a2e;
+    border-left-color: var(--zters-orange);
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.07);
+}
+
+/* ── Bot message text ── */
+body.light-theme .message.bot {
+    color: #1a1a2e;
+}
+
+/* ── Code blocks ── */
+body.light-theme pre {
+    background: #f8f8fb;
+    border-color: #e2e8f0;
+}
+body.light-theme code {
+    background: rgba(124, 58, 237, 0.07);
+    color: #7c3aed;
+}
+
+/* ── Links ── */
+body.light-theme a {
+    color: var(--zters-orange);
+}
+
+/* ── Input area wrapper ── */
+body.light-theme .input-area {
+    background: transparent;
+}
+
+/* ── Input container pill ── */
+body.light-theme .input-container {
+    background-color: #ffffff;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e2e8f0;
+}
+
+/* ── Sources panel / cards ── */
+body.light-theme .sources-panel {
+    background-color: #ffffff;
+    border-left-color: #e2e8f0;
+    box-shadow: -4px 0 16px rgba(0, 0, 0, 0.06);
+}
+body.light-theme .source-card {
+    background: #f8f9fc;
+    border-color: #e2e8f0;
+}
+body.light-theme .source-card p {
+    color: #64748b;
+}
+
+/* ── Popover panels ── */
+body.light-theme .popover-panel {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+/* ── Tooltip ── */
+body.light-theme .tooltip {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    color: #1a1a2e;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Shelf / Cube items in popover ── */
+body.light-theme .shelf-item,
+body.light-theme .cube-item {
+    background: #f8f9fc;
+    color: #334155;
+}
+body.light-theme .shelf-item:hover,
+body.light-theme .cube-item:hover {
+    background: var(--zters-purple-dim);
+    border-color: var(--zters-purple-border);
+    color: var(--zters-purple);
+}
+
+/* ── View-sources inline button ── */
+body.light-theme .view-sources-btn {
+    border-color: #e2e8f0;
+    color: #64748b;
+}
+body.light-theme .view-sources-btn:hover {
+    background: #f8f5ff;
+    border-color: var(--zters-purple-border);
+    color: var(--zters-purple);
+}
+
+/* ── Setting rows (hover) in light mode ── */
+body.light-theme .setting-row:hover {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+/* ── Status/spinner text ── */
+body.light-theme .status-indicator {
+    color: #64748b;
+}
+
+/* ── Brand footer ── */
+body.light-theme .brand-footer {
+    color: #94a3b8;
+}
+
+/* ── Scrollbar ── */
+body.light-theme .list-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+}
+body.light-theme .messages-wrapper::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
 }
 
 * {
@@ -528,9 +692,14 @@ input:checked + .slider:before {
 
 .message.user {
     align-self: flex-end;
-    background-color: var(--bubble-user);
-    padding: 12px 20px;
-    border-radius: 20px 20px 4px 20px;
+    background-color: var(--bg-panel);
+    color: var(--text-primary);
+    padding: 12px 18px;
+    border-radius: 10px;
+    border-left: 3px solid var(--zters-orange);
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
+    max-width: 72%;
+    text-align: left;
 }
 
 .message.bot {
