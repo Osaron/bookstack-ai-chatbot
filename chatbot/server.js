@@ -30,8 +30,37 @@ const bookstackApi = axios.create({
   headers: {
     'Authorization': `Token ${BOOKSTACK_TOKEN_ID}:${BOOKSTACK_TOKEN_SECRET}`,
     'Content-Type': 'application/json'
-  }
+  },
+  timeout: 7000  // 7 s — fast-fail when VPN is off
 });
+
+// Pre-flight connectivity check — run before every chat request
+// Returns true if BookStack is reachable, false otherwise.
+async function checkBookStackConnectivity() {
+  try {
+    await bookstackApi.get('/books', { params: { count: 1 } });
+    return true;
+  } catch (err) {
+    const status = err.response?.status;
+    // 403 = server is up but VPN / access is blocked
+    // 401 = bad token (treat as unreachable — user can't get docs either)
+    // 5xx, network codes = server down / VPN not connected
+    if (
+      err.code === 'ECONNREFUSED' ||
+      err.code === 'ENOTFOUND'    ||
+      err.code === 'ETIMEDOUT'    ||
+      err.code === 'ECONNRESET'   ||
+      err.code === 'ECONNABORTED' ||
+      status === 401 || status === 403 ||
+      (status && status >= 500)
+    ) {
+      console.warn(`BookStack connectivity check failed — code: ${err.code || status}`);
+      return false;
+    }
+    // Unknown error — assume reachable so we don't block on transient issues
+    return true;
+  }
+}
 
 async function searchBookStack(query, count = 10) {
   try {
@@ -175,6 +204,14 @@ app.post('/api/chat', async (req, res) => {
   res.setHeader('X-Accel-Buffering', 'no');
 
   try {
+    // ── Pre-flight: verify BookStack is reachable before doing anything ──
+    const bookStackOnline = await checkBookStackConnectivity();
+    if (!bookStackOnline) {
+      res.write(`data: ${JSON.stringify({ type: 'bookstack_error', content: 'Cannot reach BookStack' })}\n\n`);
+      res.end();
+      return;
+    }
+
     res.write(`data: ${JSON.stringify({ type: 'status', content: 'Searching documentation...' })}\n\n`);
     
     // Multi-query strategy
