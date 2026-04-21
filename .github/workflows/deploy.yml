@@ -3,7 +3,6 @@ name: Auto Deploy Chatbot to Production
 on:
   workflow_run:
     workflows: ["Sanity Checks & Auto Merge to Main"]
-    branches: [main]
     types:
       - completed
 
