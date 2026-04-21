@@ -128,6 +128,11 @@ function appendErrorCard(type) {
         icon    = '⚠️';
         title   = 'AI Token Quota Reached';
         desc    = 'The OpenAI token quota for this account has been exhausted. Please contact your Zters IT administrator to top up the API credits.';
+    } else if (type === 'auth_error') {
+        variant = 'auth';
+        icon    = '🔑';
+        title   = 'BookStack API Token Expired';
+        desc    = 'The API token used to authenticate with the Zters knowledge base has expired or is no longer valid. Please contact your Zters IT administrator to generate a new token.';
     } else if (type === 'bookstack_error') {
         variant = 'connection';
         icon    = '🔌';
@@ -319,9 +324,9 @@ async function handleChatRequest(message, isSystemCommand = false) {
                             botMsgDiv.innerHTML = marked.parse(fullResponse);
                             scrollToBottom();
                         }
-                        else if (data.type === 'quota_error' || data.type === 'bookstack_error') {
+                        else if (data.type === 'quota_error' || data.type === 'bookstack_error' || data.type === 'auth_error') {
                             removeStatus();
-                            botMsgDiv.remove(); // remove empty bot placeholder
+                            botMsgDiv.remove();
                             appendErrorCard(data.type);
                         }
                         else if (data.type === 'error') {

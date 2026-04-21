@@ -869,6 +869,16 @@ a:hover { text-decoration: underline; }
 .error-card.generic .error-title { color: #f87171; }
 .error-card.generic .error-desc  { color: #fca5a5; }
 
+/* — BookStack API token expired — blue/indigo */
+.error-card.auth {
+    background: rgba(99, 102, 241, 0.12);
+    border-color: rgba(99, 102, 241, 0.35);
+    border-left: 4px solid #6366f1;
+    color: #a5b4fc;
+}
+.error-card.auth .error-title { color: #a5b4fc; }
+.error-card.auth .error-desc  { color: #c7d2fe; }
+
 /* Light-mode overrides for error cards */
 body.light-theme .error-card.quota {
     background: #fffbeb;
@@ -877,6 +887,14 @@ body.light-theme .error-card.quota {
 }
 body.light-theme .error-card.quota .error-title { color: #92400e; }
 body.light-theme .error-card.quota .error-desc  { color: #b45309; }
+
+body.light-theme .error-card.auth {
+    background: #eef2ff;
+    border-color: #a5b4fc;
+    color: #3730a3;
+}
+body.light-theme .error-card.auth .error-title { color: #3730a3; }
+body.light-theme .error-card.auth .error-desc  { color: #4338ca; }
 
 body.light-theme .error-card.connection,
 body.light-theme .error-card.generic {

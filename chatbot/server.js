@@ -34,31 +34,39 @@ const bookstackApi = axios.create({
   timeout: 7000  // 7 s — fast-fail when VPN is off
 });
 
-// Pre-flight connectivity check — run before every chat request
-// Returns true if BookStack is reachable, false otherwise.
+// Pre-flight connectivity check — run before every chat request.
+// Returns { ok: true } if reachable, or { ok: false, reason: 'auth' | 'connection' }.
 async function checkBookStackConnectivity() {
   try {
     await bookstackApi.get('/books', { params: { count: 1 } });
-    return true;
+    return { ok: true };
   } catch (err) {
     const status = err.response?.status;
-    // 403 = server is up but VPN / access is blocked
-    // 401 = bad token (treat as unreachable — user can't get docs either)
-    // 5xx, network codes = server down / VPN not connected
+
+    // 401 = API token expired or invalid (different from VPN/connection issue)
+    if (status === 401) {
+      console.warn('BookStack connectivity check failed — 401 Unauthorized (token expired or invalid)');
+      return { ok: false, reason: 'auth' };
+    }
+
+    // 403 = server reachable but access blocked (VPN not connected)
+    // Network codes = server unreachable (VPN down, server offline)
+    // 5xx = server error
     if (
       err.code === 'ECONNREFUSED' ||
       err.code === 'ENOTFOUND'    ||
       err.code === 'ETIMEDOUT'    ||
       err.code === 'ECONNRESET'   ||
       err.code === 'ECONNABORTED' ||
-      status === 401 || status === 403 ||
+      status === 403              ||
       (status && status >= 500)
     ) {
       console.warn(`BookStack connectivity check failed — code: ${err.code || status}`);
-      return false;
+      return { ok: false, reason: 'connection' };
     }
-    // Unknown error — assume reachable so we don't block on transient issues
-    return true;
+
+    // Unknown error — assume reachable to avoid blocking on transient issues
+    return { ok: true };
   }
 }
 
@@ -205,9 +213,10 @@ app.post('/api/chat', async (req, res) => {
 
   try {
     // ── Pre-flight: verify BookStack is reachable before doing anything ──
-    const bookStackOnline = await checkBookStackConnectivity();
-    if (!bookStackOnline) {
-      res.write(`data: ${JSON.stringify({ type: 'bookstack_error', content: 'Cannot reach BookStack' })}\n\n`);
+    const connectivity = await checkBookStackConnectivity();
+    if (!connectivity.ok) {
+      const errType = connectivity.reason === 'auth' ? 'auth_error' : 'bookstack_error';
+      res.write(`data: ${JSON.stringify({ type: errType, content: connectivity.reason })}\n\n`);
       res.end();
       return;
     }
