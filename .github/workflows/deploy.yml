@@ -1,13 +1,16 @@
 name: Auto Deploy Chatbot to Production
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["Sanity Checks & Auto Merge to Main"]
+    branches: [main]
+    types:
+      - completed
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Execute Remote SSH Commands
         uses: appleboy/ssh-action@v1.0.3
